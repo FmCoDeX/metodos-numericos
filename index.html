@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Aplicación web para aproximar raíces con los métodos de Bisección y Regla Falsa." />
+  <title>Métodos Numéricos | FmCoDeX</title>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
+      background: #0b1220;
+      color: #f8fafc;
+      padding: 32px 18px;
+    }
+
+    .container {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.25);
+    }
+
+    header { text-align: center; margin-bottom: 28px; }
+    h1 { color: #38bdf8; margin-bottom: 8px; }
+    header p { color: #94a3b8; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 8px; }
+
+    label { font-weight: 700; color: #e2e8f0; }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      background: #0f172a;
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+    }
+
+    input:focus, select:focus { border-color: #38bdf8; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .primary { background: #38bdf8; color: #082f49; }
+    .secondary { background: #334155; color: #fff; }
+
+    .message {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin: 12px 0;
+    }
+
+    .success { display: block; background: #123524; color: #bbf7d0; }
+    .error { display: block; background: #451a1a; color: #fecaca; }
+
+    .table-wrap { overflow-x: auto; margin-top: 18px; }
+
+    table {
+      display: none;
+      width: 100%;
+      min-width: 850px;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 11px 10px;
+      text-align: center;
+      border-bottom: 1px solid #263244;
+    }
+
+    th { background: #0284c7; color: #fff; }
+    tbody tr:nth-child(even) { background: #162033; }
+
+    .result {
+      display: none;
+      margin-top: 20px;
+      padding: 16px;
+      border-left: 5px solid #38bdf8;
+      border-radius: 10px;
+      background: #0f2238;
+      line-height: 1.7;
+    }
+
+    .help {
+      margin-top: 24px;
+      padding: 16px;
+      border-radius: 10px;
+      background: #0f172a;
+      color: #cbd5e1;
+      line-height: 1.7;
+    }
+
+    code { color: #67e8f9; }
+
+    footer {
+      text-align: center;
+      color: #64748b;
+      margin-top: 26px;
+      font-size: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .container { padding: 20px 14px; }
+      h1 { font-size: 26px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>🧮 Métodos Numéricos</h1>
+      <p>Aproximación de raíces por Bisección y Regla Falsa</p>
+    </header>
+
+    <section class="grid">
+      <div class="field">
+        <label for="metodo">Método</label>
+        <select id="metodo">
+          <option value="biseccion">Bisección</option>
+          <option value="reglaFalsa">Regla Falsa</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="funcion">Función f(x)</label>
+        <input id="funcion" type="text" value="x^3 - x - 2" placeholder="Ej: x^3 - x - 2">
+      </div>
+
+      <div class="field">
+        <label for="a">Valor de a</label>
+        <input id="a" type="number" step="any" value="1">
+      </div>
+
+      <div class="field">
+        <label for="b">Valor de b</label>
+        <input id="b" type="number" step="any" value="2">
+      </div>
+    </section>
+
+    <div class="actions">
+      <button class="primary" onclick="calcular()">Calcular 10 iteraciones</button>
+      <button class="secondary" onclick="limpiar()">Limpiar</button>
+    </div>
+
+    <div id="mensaje" class="message"></div>
+
+    <div class="table-wrap">
+      <table id="tabla">
+        <thead>
+          <tr>
+            <th>k</th>
+            <th>a</th>
+            <th>b</th>
+            <th>f(a)</th>
+            <th>f(b)</th>
+            <th>x</th>
+            <th>f(x)</th>
+            <th>B - A</th>
+          </tr>
+        </thead>
+        <tbody id="tablaBody"></tbody>
+      </table>
+    </div>
+
+    <div id="resultado" class="result"></div>
+
+    <section class="help">
+      <strong>Ejemplos:</strong><br>
+      <code>x^3 - x - 2</code><br>
+      <code>x^2 - 4</code><br>
+      <code>x^3 + 4*x^2 - 10</code><br><br>
+      También puedes usar <code>sin(x)</code>, <code>cos(x)</code>, <code>tan(x)</code>,
+      <code>sqrt(x)</code>, <code>log(x)</code>, <code>exp(x)</code> y <code>pi</code>.
+    </section>
+
+    <footer>FmCoDeX • Métodos Numéricos • 2026</footer>
+  </main>
+
+  <script>
+    function crearFuncion(expresion) {
+      const expr = expresion
+        .replace(/\^/g, "**")
+        .replace(/\bsin\b/g, "Math.sin")
+        .replace(/\bcos\b/g, "Math.cos")
+        .replace(/\btan\b/g, "Math.tan")
+        .replace(/\bsqrt\b/g, "Math.sqrt")
+        .replace(/\blog\b/g, "Math.log")
+        .replace(/\bexp\b/g, "Math.exp")
+        .replace(/\bpi\b/g, "Math.PI");
+
+      return new Function("x", `"use strict"; return (${expr});`);
+    }
+
+    function mostrarMensaje(texto, tipo) {
+      const mensaje = document.getElementById("mensaje");
+      mensaje.textContent = texto;
+      mensaje.className = `message ${tipo}`;
+    }
+
+    function calcular() {
+      const metodo = document.getElementById("metodo").value;
+      const expresion = document.getElementById("funcion").value.trim();
+      let a = Number(document.getElementById("a").value);
+      let b = Number(document.getElementById("b").value);
+
+      const tabla = document.getElementById("tabla");
+      const cuerpo = document.getElementById("tablaBody");
+      const resultado = document.getElementById("resultado");
+
+      cuerpo.innerHTML = "";
+      tabla.style.display = "none";
+      resultado.style.display = "none";
+      document.getElementById("mensaje").className = "message";
+
+      if (!expresion || !Number.isFinite(a) || !Number.isFinite(b)) {
+        mostrarMensaje("Completa correctamente todos los datos.", "error");
+        return;
+      }
+
+      if (a >= b) {
+        mostrarMensaje("El valor de a debe ser menor que b.", "error");
+        return;
+      }
+
+      let f;
+      try {
+        f = crearFuncion(expresion);
+      } catch {
+        mostrarMensaje("La función ingresada no es válida.", "error");
+        return;
+      }
+
+      let fa, fb;
+      try {
+        fa = f(a);
+        fb = f(b);
+      } catch {
+        mostrarMensaje("No fue posible evaluar la función en el intervalo.", "error");
+        return;
+      }
+
+      if (!Number.isFinite(fa) || !Number.isFinite(fb)) {
+        mostrarMensaje("La función produce un valor no válido en el intervalo.", "error");
+        return;
+      }
+
+      if (fa === 0) {
+        mostrarMensaje(`La raíz exacta es a = ${a}.`, "success");
+        return;
+      }
+
+      if (fb === 0) {
+        mostrarMensaje(`La raíz exacta es b = ${b}.`, "success");
+        return;
+      }
+
+      if (fa * fb > 0) {
+        mostrarMensaje("El intervalo no cumple f(a) · f(b) < 0. Prueba otro intervalo.", "error");
+        return;
+      }
+
+      let x = 0;
+
+      for (let k = 1; k <= 10; k++) {
+        fa = f(a);
+        fb = f(b);
+
+        if (metodo === "biseccion") {
+          x = (a + b) / 2;
+        } else {
+          const denominador = fb - fa;
+          if (denominador === 0) {
+            mostrarMensaje("No se puede aplicar Regla Falsa porque f(b) - f(a) = 0.", "error");
+            return;
+          }
+          x = (a * fb - b * fa) / denominador;
+        }
+
+        const fx = f(x);
+        const diferencia = b - a;
+
+        cuerpo.insertAdjacentHTML("beforeend", `
+          <tr>
+            <td>${k}</td>
+            <td>${a.toFixed(6)}</td>
+            <td>${b.toFixed(6)}</td>
+            <td>${fa.toFixed(6)}</td>
+            <td>${fb.toFixed(6)}</td>
+            <td>${x.toFixed(6)}</td>
+            <td>${fx.toFixed(6)}</td>
+            <td>${diferencia.toFixed(6)}</td>
+          </tr>
+        `);
+
+        if (fx === 0) {
+          break;
+        } else if (fa * fx < 0) {
+          b = x;
+        } else {
+          a = x;
+        }
+      }
+
+      tabla.style.display = "table";
+      resultado.innerHTML = `
+        <strong>Resultado:</strong><br>
+        Método: ${metodo === "biseccion" ? "Bisección" : "Regla Falsa"}<br>
+        Raíz aproximada: <strong>${x.toFixed(8)}</strong><br>
+        Iteraciones mostradas: 10
+      `;
+      resultado.style.display = "block";
+
+      mostrarMensaje("Cálculo realizado correctamente.", "success");
+    }
+
+    function limpiar() {
+      document.getElementById("funcion").value = "";
+      document.getElementById("a").value = "";
+      document.getElementById("b").value = "";
+      document.getElementById("tablaBody").innerHTML = "";
+      document.getElementById("tabla").style.display = "none";
+      document.getElementById("resultado").style.display = "none";
+      document.getElementById("mensaje").className = "message";
+    }
+  </script>
+</body>
+</html>
